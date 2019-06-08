@@ -163,21 +163,26 @@ namespace sjtu {
             strcpy(name, "silly0.txt");
             name[5] = char('0' + cnt);
             add();
-            file = fopen(name, "wb+");
-            info.Size = 0;
-            info.end = sizeof(Information);
-            SimpleNode root(info.end);
-            root.num = 1, root.sonType = 1;
-            info.root = root.offset;
-            info.end += sizeof(SimpleNode);
-            LeafNode leaf(info.end);
-            info.headLeaf = info.tailLeaf = leaf.offset;
-            info.end += sizeof(LeafNode);
-            root.son[0] = leaf.offset;
-            leaf.parent = root.offset;
-            writeFile(&info, 0, 1, sizeof(Information));
-            writeFile(&root, root.offset, 1, sizeof(SimpleNode));
-            writeFile(&leaf, leaf.offset, 1, sizeof(LeafNode));
+            file = fopen(name, "rb+");
+            if(file == nullptr) {
+                file = fopen(name, "wb+");
+                info.Size = 0;
+                info.end = sizeof(Information);
+                SimpleNode root(info.end);
+                root.num = 1, root.sonType = 1;
+                info.root = root.offset;
+                info.end += sizeof(SimpleNode);
+                LeafNode leaf(info.end);
+                info.headLeaf = info.tailLeaf = leaf.offset;
+                info.end += sizeof(LeafNode);
+                root.son[0] = leaf.offset;
+                leaf.parent = root.offset;
+                writeFile(&info, 0, 1, sizeof(Information));
+                writeFile(&root, root.offset, 1, sizeof(SimpleNode));
+                writeFile(&leaf, leaf.offset, 1, sizeof(LeafNode));
+            } else {
+                readFile(&info, 0, 1, sizeof(Information));
+            }
             fflush(file);
         }
 
