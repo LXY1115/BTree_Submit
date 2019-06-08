@@ -188,13 +188,13 @@ namespace sjtu {
             fclose(file);
         }
 
-        void readFile(void *place, int offset, size_t num, size_t size) {
+        void readFile(void *place, int offset, int num, int size) {
             fseek(file, offset, SEEK_SET);
             fread(place, num, size, file);
             fflush(file);
         }
 
-        void writeFile(void *place, int offset, size_t num, size_t size) {
+        void writeFile(void *place, int offset, int num, int size) {
             fseek(file, offset, SEEK_SET);
             fwrite(place, num, size, file);
             fflush(file);
@@ -285,7 +285,7 @@ namespace sjtu {
             fflush(file);
         }
 
-        void changeRoot(SimpleNode node, SimpleNode newNode) {
+        void changeRoot(SimpleNode &node, SimpleNode &newNode) {
             SimpleNode newRoot;
             newRoot.parent = newRoot.sonType = 0;
             newRoot.offset = member.end;
@@ -340,7 +340,7 @@ namespace sjtu {
             fflush(file);
         }
 
-        OperationResult insertMin(LeafNode leaf, int leafOffset, const Key &key, const Value &value) {
+        OperationResult insertMin(LeafNode &leaf, int leafOffset, const Key &key, const Value &value) {
             readFile(&leaf, member.headLeaf, 1, sizeof(LeafNode));
             OperationResult t = insertInLeaf(leaf, key, value);
             if (t == Fail) return t;
