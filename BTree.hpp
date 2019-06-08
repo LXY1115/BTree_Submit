@@ -20,11 +20,7 @@ namespace sjtu {
         static const int L = 32;
 
     public:
-
-        static int cnt;
-
-        static void add() { cnt++; }
-
+        
         struct Information {
             int headLeaf;
             int tailLeaf;
@@ -160,9 +156,7 @@ namespace sjtu {
 
         // Default Constructor and Copy Constructor
         BTree() {
-            strcpy(name, "silly0.txt");
-            name[5] = char('0' + cnt);
-            add();
+            strcpy(name, "silly.txt");
             file = fopen(name, "rb+");
             if(file == nullptr) {
                 file = fopen(name, "wb+");
@@ -407,7 +401,5 @@ namespace sjtu {
         }
     };
 
-    template<class Key, class Value, class Compare>
-    int BTree<Key, Value, Compare>::cnt = 0;
 } // namespace sjtu
 
