@@ -20,7 +20,6 @@ namespace sjtu {
         static const int L = 32;
 
     public:
-        
         struct Information {
             int headLeaf;
             int tailLeaf;
@@ -33,7 +32,7 @@ namespace sjtu {
             }
         };
 
-        Information info;
+        Information member;
 
         struct LeafNode {
             int offset;
@@ -156,26 +155,26 @@ namespace sjtu {
 
         // Default Constructor and Copy Constructor
         BTree() {
-            strcpy(name, "silly.txt");
+            strcpy(name, "silly0.txt");
             file = fopen(name, "rb+");
             if(file == nullptr) {
                 file = fopen(name, "wb+");
-                info.Size = 0;
-                info.end = sizeof(Information);
-                SimpleNode root(info.end);
+                member.Size = 0;
+                member.end = sizeof(Information);
+                SimpleNode root(member.end);
                 root.num = 1, root.sonType = 1;
-                info.root = root.offset;
-                info.end += sizeof(SimpleNode);
-                LeafNode leaf(info.end);
-                info.headLeaf = info.tailLeaf = leaf.offset;
-                info.end += sizeof(LeafNode);
+                member.root = root.offset;
+                member.end += sizeof(SimpleNode);
+                LeafNode leaf(member.end);
+                member.headLeaf = member.tailLeaf = leaf.offset;
+                member.end += sizeof(LeafNode);
                 root.son[0] = leaf.offset;
                 leaf.parent = root.offset;
-                writeFile(&info, 0, 1, sizeof(Information));
+                writeFile(&member, 0, 1, sizeof(Information));
                 writeFile(&root, root.offset, 1, sizeof(SimpleNode));
                 writeFile(&leaf, leaf.offset, 1, sizeof(LeafNode));
             } else {
-                readFile(&info, 0, 1, sizeof(Information));
+                readFile(&member, 0, 1, sizeof(Information));
             }
             fflush(file);
         }
@@ -231,9 +230,9 @@ namespace sjtu {
             }
             leaf.data[pos].first = key, leaf.data[pos].second = value;
             leaf.num++;
-            info.Size++;
-            //leaf.offset = info.end;
-            writeFile(&info, 0, 1, sizeof(Information));
+            member.Size++;
+            //leaf.offset = member.end;
+            writeFile(&member, 0, 1, sizeof(Information));
             if (leaf.num <= L) writeFile(&leaf, leaf.offset, 1, sizeof(LeafNode));
             else splitLeaf(leaf, key);
             fflush(file);
@@ -244,8 +243,8 @@ namespace sjtu {
             LeafNode newLeaf;
             newLeaf.num = leaf.num / 2;
             leaf.num -= newLeaf.num;
-            newLeaf.offset = info.end;
-            info.end += sizeof(LeafNode);
+            newLeaf.offset = member.end;
+            member.end += sizeof(LeafNode);
             newLeaf.parent = leaf.parent;
             for (int i = 0; i < newLeaf.num; i++) {
                 newLeaf.data[i].first = leaf.data[i + leaf.num].first;
@@ -260,10 +259,10 @@ namespace sjtu {
                 nextLeaf.prev = newLeaf.offset;
                 writeFile(&nextLeaf, nextLeaf.offset, 1, sizeof(LeafNode));
             }//update next
-            if (info.tailLeaf == leaf.offset) info.tailLeaf = newLeaf.offset; // split tail
+            if (member.tailLeaf == leaf.offset) member.tailLeaf = newLeaf.offset; // split tail
             writeFile(&leaf, leaf.offset, 1, sizeof(LeafNode));
             writeFile(&newLeaf, newLeaf.offset, 1, sizeof(LeafNode));
-            writeFile(&info, 0, 1, sizeof(Information));
+            writeFile(&member, 0, 1, sizeof(Information));
             SimpleNode parent;
             readFile(&parent, leaf.parent, 1, sizeof(SimpleNode));
             insertInNode(parent, newLeaf.data[0].first, newLeaf.offset);
@@ -289,15 +288,15 @@ namespace sjtu {
         void changeRoot(SimpleNode node, SimpleNode newNode) {
             SimpleNode newRoot;
             newRoot.parent = newRoot.sonType = 0;
-            newRoot.offset = info.end;
-            info.end += sizeof(SimpleNode);
+            newRoot.offset = member.end;
+            member.end += sizeof(SimpleNode);
             newRoot.num = 2;
             newRoot.keyData[0] = node.keyData[0];
             newRoot.keyData[1] = newNode.keyData[0];
             newRoot.son[0] = node.offset;
             newRoot.son[1] = newNode.offset;
-            info.root = node.parent = newNode.parent = newRoot.offset;
-            writeFile(&info, 0, 1, sizeof(Information));
+            member.root = node.parent = newNode.parent = newRoot.offset;
+            writeFile(&member, 0, 1, sizeof(Information));
             writeFile(&node, node.offset, 1, sizeof(SimpleNode));
             writeFile(&newNode, newNode.offset, 1, sizeof(SimpleNode));
             writeFile(&newRoot, newRoot.offset, 1, sizeof(SimpleNode));
@@ -309,8 +308,8 @@ namespace sjtu {
             node.num -= newNode.num;
             newNode.parent = node.parent;
             newNode.sonType = node.sonType;
-            newNode.offset = info.end;
-            info.end += sizeof(SimpleNode);
+            newNode.offset = member.end;
+            member.end += sizeof(SimpleNode);
             for (int i = 0; i < newNode.num; ++i) {
                 newNode.son[i] = node.son[node.num + i];
                 newNode.keyData[i] = node.keyData[node.num + i];
@@ -328,10 +327,10 @@ namespace sjtu {
                     writeFile(&tmp, tmp.offset, 1, sizeof(SimpleNode));
                 }
             }
-            if (node.offset == info.root)
+            if (node.offset == member.root)
                 changeRoot(node, newNode);
             else {
-                writeFile(&info, 0, 1, sizeof(Information));
+                writeFile(&member, 0, 1, sizeof(Information));
                 writeFile(&node, node.offset, 1, sizeof(SimpleNode));
                 writeFile(&newNode, newNode.offset, 1, sizeof(SimpleNode));
                 SimpleNode parent;
@@ -342,12 +341,9 @@ namespace sjtu {
         }
 
         OperationResult insertMin(LeafNode leaf, int leafOffset, const Key &key, const Value &value) {
-            readFile(&leaf, info.headLeaf, 1, sizeof(LeafNode));
+            readFile(&leaf, member.headLeaf, 1, sizeof(LeafNode));
             OperationResult t = insertInLeaf(leaf, key, value);
-            if (t == Fail) {
-                fflush(file);
-                return t;
-            }
+            if (t == Fail) return t;
             int offset = leaf.parent;
             SimpleNode node;
             while (offset != 0) {
@@ -361,9 +357,9 @@ namespace sjtu {
         }
 
         pair<iterator, OperationResult> insert(const Key &key, const Value &value) {
-            int leafOffset = searchLeaf(key, info.root);
+            int leafOffset = searchLeaf(key, member.root);
             LeafNode leaf;
-            if (info.Size == 0 || leafOffset == 0) {
+            if (member.Size == 0 || leafOffset == 0) {
                 OperationResult t = insertMin(leaf, leafOffset, key, value);
                 return pair<iterator, OperationResult>(iterator(nullptr), t);
             }//min or empty
@@ -382,16 +378,16 @@ namespace sjtu {
         }
 
         bool empty() const {
-            return !info.Size;
+            return !member.Size;
         }
 
         // Return the number of <K,V> pairs
         size_t size() const {
-            return info.Size;
+            return member.Size;
         }
 
         Value at(const Key &key) {
-            int leafLocation = searchLeaf(key, info.root);
+            int leafLocation = searchLeaf(key, member.root);
             if (leafLocation == 0) throw "error";
             LeafNode leaf;
             readFile(&leaf, leafLocation, 1, sizeof(LeafNode));
@@ -400,6 +396,4 @@ namespace sjtu {
             throw "error";
         }
     };
-
 } // namespace sjtu
-
